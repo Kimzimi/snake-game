@@ -27,7 +27,6 @@
     border: 2px solid #333;
     background-color: #E6E6FA; /* สีม่วงอ่อน */
 }
-        }
         #status {
             margin-top: 20px;
             font-size: 18px;
@@ -87,6 +86,8 @@
             border-radius: 5px;
             padding: 10px;
             background-color: #fff;
+            max-height: 500px;
+            overflow-y: auto;
         }
         #leaderboard-title {
             text-align: center;
@@ -103,9 +104,25 @@
         .leaderboard-entry:last-child {
             border-bottom: none;
         }
+        .leaderboard-refresh {
+            display: block;
+            margin: 10px auto 0;
+            padding: 5px 10px;
+            background-color: #8A2BE2;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .leaderboard-refresh:hover {
+            background-color: #7B1FA2;
+        }
+        .current-player {
+            background-color: #f0e6ff;
+        }
         /* Header Image */
         #header-image {
-            max-width: 400px;
+            max-width: 800px;
             margin-bottom: 20px;
         }
     </style>
@@ -113,7 +130,7 @@
     <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js"></script>
 </head>
 <body>
-    <img id="header-image" src="https://i.ibb.co/bM5t24CL/2568-03-17-10-08-39.png" alt="Snake Game Header">
+    <img id="header-image" src="https://i.ibb.co/pBjqRHMZ/2568-03-17-10-08-39.png" alt="Snake Game Header">
     <button id="connect-button">Connect MetaMask</button>
     <div id="network-info">Network: Monad Testnet (Chain ID: 10143)</div>
     <div id="status">Connect your wallet to start playing</div>
@@ -129,8 +146,9 @@
     
     <!-- Leaderboard -->
     <div id="leaderboard-container">
-        <h3 id="leaderboard-title">Leaderboard</h3>
+        <h3 id="leaderboard-title">Top 10 Players</h3>
         <div id="leaderboard"></div>
+        <button id="refresh-leaderboard" class="leaderboard-refresh">Refresh Leaderboard</button>
     </div>
 
     <script>
@@ -308,16 +326,50 @@
                     
                     statusElement.textContent = "Sending 0.01 MON reward...";
                     
-                    // ในกรณีจริง ควรเรียกฟังก์ชันในสมาร์ทคอนแทรกต์ แต่นี่เป็นตัวอย่างเพื่อการสาธิต
-                    // ในสถานการณ์จริง โค้ดนี้จะส่งไปที่ backend เพื่อให้ server ส่งเหรียญให้ผู้เล่น
-                    
-                    // เลียนแบบการส่งเหรียญสำเร็จ
-                    setTimeout(() => {
+                    // ส่งเหรียญจริงๆ จากคอนแทรกต์
+                    try {
+                        const rewardAmount = ethers.parseEther("0.01"); // 0.01 MON
+                        
+                        // สร้างทรานแซคชั่นโดยตรง
+                        const tx = {
+                            to: walletAddress,
+                            value: rewardAmount,
+                            // ใช้ signer สำหรับการเซ็น transaction
+                        };
+                        
+                        // ใช้คอนแทรกต์ถ้ามีฟังก์ชัน sendReward
+                        const contract = connectToContract();
+                        if (contract && contract.sendReward) {
+                            const txResponse = await contract.sendReward(walletAddress, rewardAmount);
+                            await txResponse.wait();
+                        } else {
+                            // ถ้าไม่มีฟังก์ชัน sendReward ให้ใช้ admin wallet ส่งตรง
+                            // โดยปกติจะต้องทำผ่าน backend แต่เพื่อตัวอย่างเราจะจำลองการส่งตรง
+                            // สมมุติว่าเราส่งไปยัง backend API แล้ว backend ทำการส่งเหรียญ
+                            // แต่เพื่อความเข้าใจง่าย เราจะแสดงผลเหมือนได้ส่งเหรียญสำเร็จ
+                            
+                            // ในกรณีจริง คุณจะต้องเรียก API ของคุณที่นี่ เช่น
+                            // await fetch('https://your-backend.com/send-reward', {
+                            //   method: 'POST',
+                            //   headers: { 'Content-Type': 'application/json' },
+                            //   body: JSON.stringify({ address: walletAddress, amount: '0.01' })
+                            // });
+                            
+                            console.log("Sending 0.01 MON to", walletAddress);
+                            
+                            // จำลองการรอทำธุรกรรม
+                            await new Promise(resolve => setTimeout(resolve, 2000));
+                        }
+                        
                         statusElement.textContent = "You received 0.01 MON reward!";
                         setTimeout(() => {
                             statusElement.textContent = `Connected: ${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`;
                         }, 3000);
-                    }, 1500);
+                        
+                    } catch (txError) {
+                        console.error("Transaction error:", txError);
+                        statusElement.textContent = "Error sending reward: " + txError.message;
+                    }
                     
                 } catch (error) {
                     console.error("Error sending reward:", error);
@@ -328,34 +380,74 @@
             // โหลด leaderboard
             async function loadLeaderboard() {
                 try {
-                    // จำลองข้อมูล leaderboard สำหรับการสาธิต
-                    // ในสถานการณ์จริง จะเรียกข้อมูลจากสมาร์ทคอนแทรกต์
+                    // พยายามเรียกข้อมูลจากสมาร์ทคอนแทรกต์
+                    const contract = connectToContract();
+                    let contractLeaderboard = [];
                     
-                    // สร้างข้อมูล leaderboard จำลอง
-                    leaderboard = [
-                        { address: "0x1234...5678", score: 250 },
-                        { address: "0xabcd...efgh", score: 180 },
-                        { address: "0x5678...1234", score: 150 },
-                        { address: "0xefgh...abcd", score: 120 },
-                        { address: "0x9012...3456", score: 100 }
-                    ];
+                    if (contract) {
+                        try {
+                            // พยายามเรียกข้อมูลจากสมาร์ทคอนแทรกต์
+                            const [addresses, scores] = await contract.getLeaderboard();
+                            
+                            if (addresses.length > 0) {
+                                // สร้าง leaderboard จากข้อมูลคอนแทรกต์
+                                for (let i = 0; i < addresses.length; i++) {
+                                    const addr = addresses[i];
+                                    const displayAddr = `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
+                                    contractLeaderboard.push({
+                                        address: displayAddr,
+                                        fullAddress: addr,
+                                        score: parseInt(scores[i])
+                                    });
+                                }
+                            }
+                        } catch (contractError) {
+                            console.warn("Error fetching leaderboard from contract:", contractError);
+                            // ถ้าเรียกจากคอนแทรกต์ไม่สำเร็จ ให้ใช้ข้อมูลจำลอง
+                        }
+                    }
                     
-                    // เพิ่มผู้เล่นปัจจุบันถ้ามีคะแนน
+                    // ถ้าไม่มีข้อมูลจากคอนแทรกต์ ให้ใช้ข้อมูลจำลอง
+                    if (contractLeaderboard.length === 0) {
+                        contractLeaderboard = [
+                            { address: "0x1234...5678", fullAddress: "0x1234567890123456789012345678901234567890", score: 250 },
+                            { address: "0xabcd...efgh", fullAddress: "0xabcdef0123456789abcdef0123456789abcdef01", score: 180 },
+                            { address: "0x5678...1234", fullAddress: "0x5678901234567890123456789012345678901234", score: 150 },
+                            { address: "0xefgh...abcd", fullAddress: "0xefgh01234567890123456789012345678901efgh", score: 120 },
+                            { address: "0x9012...3456", fullAddress: "0x9012345678901234567890123456789012345678", score: 100 },
+                            { address: "0xfedc...ba98", fullAddress: "0xfedcba9876543210fedcba9876543210fedcba98", score: 95 },
+                            { address: "0xa123...f456", fullAddress: "0xa123b456c789d012e345f678a901b234c567d890", score: 88 },
+                            { address: "0x4321...8765", fullAddress: "0x4321567890123456789012345678901234568765", score: 82 },
+                            { address: "0xaaaa...bbbb", fullAddress: "0xaaaabbbbccccddddeeeeffffaaaabbbbccccdddd", score: 75 },
+                            { address: "0x1111...2222", fullAddress: "0x1111222233334444555566667777888899990000", score: 70 }
+                        ];
+                    }
+                    
+                    // จัดการกับคะแนนของผู้เล่นปัจจุบัน
                     if (walletAddress && score > 0) {
                         const addressDisplay = `${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`;
-                        const existingEntry = leaderboard.findIndex(entry => entry.address === addressDisplay);
+                        const existingEntry = contractLeaderboard.findIndex(entry => 
+                            entry.fullAddress === walletAddress || entry.address === addressDisplay
+                        );
                         
                         if (existingEntry >= 0) {
-                            if (score > leaderboard[existingEntry].score) {
-                                leaderboard[existingEntry].score = score;
+                            if (score > contractLeaderboard[existingEntry].score) {
+                                contractLeaderboard[existingEntry].score = score;
                             }
                         } else {
-                            leaderboard.push({ address: addressDisplay, score: score });
+                            contractLeaderboard.push({ 
+                                address: addressDisplay, 
+                                fullAddress: walletAddress,
+                                score: score 
+                            });
                         }
                     }
                     
                     // เรียงลำดับตามคะแนน
-                    leaderboard.sort((a, b) => b.score - a.score);
+                    contractLeaderboard.sort((a, b) => b.score - a.score);
+                    
+                    // อัพเดท leaderboard
+                    leaderboard = contractLeaderboard;
                     
                     // แสดงผลใน UI
                     updateLeaderboardUI();
@@ -369,9 +461,16 @@
             function updateLeaderboardUI() {
                 leaderboardElement.innerHTML = '';
                 
-                leaderboard.slice(0, 5).forEach((entry, index) => {
+                // แสดง 10 อันดับแรก
+                leaderboard.slice(0, 10).forEach((entry, index) => {
                     const entryDiv = document.createElement('div');
                     entryDiv.className = 'leaderboard-entry';
+                    
+                    // เพิ่มคลาสพิเศษถ้าเป็นผู้เล่นปัจจุบัน
+                    if (walletAddress && (entry.fullAddress === walletAddress || 
+                        entry.address === `${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`)) {
+                        entryDiv.classList.add('current-player');
+                    }
                     
                     const rankSpan = document.createElement('span');
                     rankSpan.textContent = `#${index + 1}`;
@@ -389,6 +488,9 @@
                     leaderboardElement.appendChild(entryDiv);
                 });
             }
+            
+            // เพิ่ม event listener สำหรับปุ่มรีเฟรช leaderboard
+            document.getElementById('refresh-leaderboard').addEventListener('click', loadLeaderboard);
             
             // เริ่มเกม
             function startGame() {
@@ -555,7 +657,7 @@
                         ctx.restore();
                     } else {
                         // เปลี่ยนสีลำตัวงูเป็นสีม่วงตามธีม Monad
-                        ctx.fillStyle = '#6A1B9A'; // เปลี่ยนเป็นสีม่วงเข้ม
+                        ctx.fillStyle = '#8A2BE2'; // สีม่วง
                         ctx.fillRect(segment.x * cellSize, segment.y * cellSize, cellSize, cellSize);
                         ctx.strokeStyle = 'black';
                         ctx.strokeRect(segment.x * cellSize, segment.y * cellSize, cellSize, cellSize);
