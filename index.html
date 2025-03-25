@@ -12,7 +12,7 @@
             justify-content: center;
             height: 100vh;
             margin: 0;
-            background-color: #f0f0f0;
+            background-color: #E6E6FA; /* Light purple background */
             font-family: Arial, sans-serif;
         }
         #game-container {
@@ -25,7 +25,7 @@
             width: 100%;
             height: 100%;
             border: 2px solid #333;
-            background-color: #E6E6FA; /* สีม่วงอ่อน */
+            background-color: #D8BFD8; /* Purple grass background */
         }
         #status {
             margin-top: 20px;
@@ -39,7 +39,7 @@
         #connect-button {
             padding: 10px 20px;
             font-size: 16px;
-            background-color: #8A2BE2; /* ปุ่มสีม่วง */
+            background-color: #8A2BE2;
             color: white;
             border: none;
             border-radius: 5px;
@@ -47,7 +47,7 @@
             margin-top: 20px;
         }
         #connect-button:hover {
-            background-color: #7B1FA2; /* สีม่วงเข้มขึ้น */
+            background-color: #7B1FA2;
         }
         #connect-button:disabled {
             background-color: #cccccc;
@@ -78,7 +78,6 @@
         #game-over p {
             margin-bottom: 20px;
         }
-        /* Leaderboard Styles */
         #leaderboard-container {
             width: 400px;
             margin-top: 20px;
@@ -120,13 +119,11 @@
         .current-player {
             background-color: #f0e6ff;
         }
-        /* Header Image */
         #header-image {
             max-width: 1000px;
             margin-bottom: 20px;
         }
     </style>
-    <!-- ใช้ CDN เพื่อโหลด ethers.js -->
     <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js"></script>
 </head>
 <body>
@@ -144,7 +141,6 @@
         </div>
     </div>
     
-    <!-- Leaderboard -->
     <div id="leaderboard-container">
         <h3 id="leaderboard-title">Top 10 Players</h3>
         <div id="leaderboard"></div>
@@ -156,10 +152,9 @@
             console.log("Document ready, checking for ethers...");
             console.log("ethers type:", typeof ethers);
             
-            // ตรวจสอบว่า ethers.js โหลดสำเร็จหรือไม่
             if (typeof ethers === 'undefined') {
-                console.error("Ethers.js failed to load. Check the network tab for errors.");
-                alert("Ethers.js failed to load. Please check your internet connection or try a different browser.");
+                console.error("Ethers.js failed to load.");
+                alert("Ethers.js failed to load. Please check your internet connection.");
                 document.getElementById('connect-button').disabled = true;
                 document.getElementById('status').textContent = "Error: Ethers.js not loaded";
                 return;
@@ -168,9 +163,6 @@
                 console.log("Ethers version:", ethers.version);
             }
 
-            // ------------------------------
-            // ตัวแปรสำหรับเกม
-            // ------------------------------
             const canvas = document.getElementById('game-board');
             const ctx = canvas.getContext('2d');
             const cellSize = 20;
@@ -182,18 +174,14 @@
             let food = {};
             let score = 0;
             let gameRunning = false;
-            let fruitCount = 0; // นับจำนวนผลไม้ที่เก็บได้
+            let fruitCount = 0;
             let snakeHead = new Image();
             let gameOverDiv = document.getElementById('game-over');
             let finalScoreSpan = document.getElementById('final-score');
             let leaderboard = [];
             
-            // โหลดรูปภาพหัวงู (สีม่วง)
             snakeHead.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMCAyMCI+PHJlY3QgZmlsbD0iIzhBMkJFMiIgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiByeD0iMyIvPjxjaXJjbGUgZmlsbD0iI2ZmZiIgY3g9IjciIGN5PSI2IiByPSIyIi8+PGNpcmNsZSBmaWxsPSIjZmZmIiBjeD0iMTMiIGN5PSI2IiByPSIyIi8+PGNpcmNsZSBmaWxsPSIjMDAwIiBjeD0iNyIgY3k9IjYiIHI9IjEiLz48Y2lyY2xlIGZpbGw9IiMwMDAiIGN4PSIxMyIgY3k9IjYiIHI9IjEiLz48cGF0aCBkPSJNNyAxMmMwIDEuNjYgMS4zNCAzIDMgM3MzLTEuMzQgMy0zSDd6IiBmaWxsPSJyZWQiLz48L3N2Zz4=';
 
-            // ------------------------------
-            // ตัวแปรสำหรับ Ethereum/MetaMask
-            // ------------------------------
             let provider;
             let signer;
             let walletAddress;
@@ -203,25 +191,16 @@
             const scoreElement = document.getElementById('score');
             const leaderboardElement = document.getElementById('leaderboard');
 
-            // ข้อมูล Monad Testnet
             const monadTestnetRPC = "https://testnet-rpc.monad.xyz/";
             const monadTestnetChainId = 10143;
             
-            // ที่อยู่และ ABI ของสมาร์ทคอนแทรกต์ (ตัวอย่าง)
             const contractAddress = "0x1234567890123456789012345678901234567890";
             const contractABI = [
                 "function recordScore(uint256 score) external",
                 "function getHighScore() external view returns (uint256)",
                 "function getLeaderboard() external view returns (address[], uint256[])"
-                // ถ้ามีฟังก์ชัน sendReward ให้เพิ่มในนี้
-                // "function sendReward(address to, uint256 amount) external"
             ];
 
-            // ------------------------------
-            // ฟังก์ชันเกี่ยวกับกระเป๋า / blockchain
-            // ------------------------------
-
-            // ฟังก์ชันเชื่อมต่อกับ MetaMask
             async function connectWallet() {
                 try {
                     if (typeof window.ethereum === 'undefined') {
@@ -230,29 +209,23 @@
                         return;
                     }
                     
-                    // สร้าง provider สำหรับ MetaMask
                     provider = new ethers.BrowserProvider(window.ethereum);
                     console.log("Provider created:", provider);
                     
-                    // ขอเชื่อมต่อกับบัญชี
                     const accounts = await provider.send("eth_requestAccounts", []);
                     walletAddress = accounts[0];
                     console.log("Connected to wallet:", walletAddress);
                     
-                    // รับ signer
                     signer = await provider.getSigner();
                     console.log("Signer:", signer);
                     
-                    // เปลี่ยนข้อความปุ่มและสถานะ
                     connectButton.textContent = "Wallet Connected";
                     connectButton.disabled = true;
                     statusElement.textContent = `Connected: ${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`;
                     
-                    // ตรวจสอบเครือข่าย
                     const network = await provider.getNetwork();
                     console.log("Current network:", network);
                     
-                    // สลับไปยัง Monad Testnet ถ้าจำเป็น
                     if (network.chainId !== BigInt(monadTestnetChainId)) {
                         try {
                             await window.ethereum.request({
@@ -260,7 +233,6 @@
                                 params: [{ chainId: `0x${monadTestnetChainId.toString(16)}` }],
                             });
                         } catch (switchError) {
-                            // เพิ่ม Monad Testnet ถ้าไม่มีในรายการเครือข่าย
                             if (switchError.code === 4902) {
                                 try {
                                     await window.ethereum.request({
@@ -288,10 +260,7 @@
                         }
                     }
                     
-                    // โหลด leaderboard ก่อนเริ่มเกม (ดึงข้อมูลจากสมาร์ทคอนแทรกต์ ถ้ามี)
                     loadLeaderboard();
-                    
-                    // เริ่มเกม
                     startGame();
                     
                 } catch (error) {
@@ -300,7 +269,6 @@
                 }
             }
             
-            // เชื่อมต่อกับสมาร์ทคอนแทรกต์
             function connectToContract() {
                 try {
                     const contract = new ethers.Contract(contractAddress, contractABI, signer);
@@ -311,7 +279,6 @@
                 }
             }
             
-            // บันทึกคะแนนลงในบล็อกเชน
             async function saveScoreToBlockchain(score) {
                 try {
                     const contract = connectToContract();
@@ -321,8 +288,6 @@
                     const tx = await contract.recordScore(score);
                     await tx.wait();
                     statusElement.textContent = `Score ${score} saved to blockchain!`;
-                    
-                    // อัพเดท leaderboard หลังบันทึกคะแนน
                     loadLeaderboard();
                 } catch (error) {
                     console.error("Error saving score:", error);
@@ -330,38 +295,18 @@
                 }
             }
             
-            // ส่งเหรียญ (ตัวอย่าง) เมื่อเก็บผลไม้ครบ 10 เม็ด
             async function sendReward() {
                 try {
                     if (!signer) return;
                     
                     statusElement.textContent = "Sending 0.01 MON reward...";
+                    console.log("Mock sending 0.01 MON to", walletAddress);
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                     
-                    // ตัวอย่างการส่งเหรียญจากคอนแทรกต์
-                    // หรือการ mock ว่ามีการส่งจริง
-                    try {
-                        const rewardAmount = ethers.parseEther("0.01"); // 0.01 MON
-                        
-                        // ถ้าสมาร์ทคอนแทรกต์มีฟังก์ชัน sendReward:
-                        // const contract = connectToContract();
-                        // const txResponse = await contract.sendReward(walletAddress, rewardAmount);
-                        // await txResponse.wait();
-                        
-                        // **หากในสัญญาไม่มีฟังก์ชัน sendReward**
-                        // ในการใช้งานจริง ต้องให้ admin wallet หรือ backend เป็นผู้ส่ง
-                        // ด้านล่างนี้เป็นการ mock ให้เห็นภาพเท่านั้น
-                        console.log("Mock sending 0.01 MON to", walletAddress);
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                        
-                        statusElement.textContent = "You received 0.01 MON reward!";
-                        setTimeout(() => {
-                            statusElement.textContent = `Connected: ${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`;
-                        }, 3000);
-                        
-                    } catch (txError) {
-                        console.error("Transaction error:", txError);
-                        statusElement.textContent = "Error sending reward: " + txError.message;
-                    }
+                    statusElement.textContent = "You received 0.01 MON reward!";
+                    setTimeout(() => {
+                        statusElement.textContent = `Connected: ${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`;
+                    }, 3000);
                     
                 } catch (error) {
                     console.error("Error sending reward:", error);
@@ -369,7 +314,6 @@
                 }
             }
             
-            // โหลด leaderboard จากสมาร์ทคอนแทรกต์ (หรือ fallback ถ้าล้มเหลว)
             async function loadLeaderboard() {
                 try {
                     let contractLeaderboard = [];
@@ -377,9 +321,7 @@
 
                     if (contract) {
                         try {
-                            // เรียก getLeaderboard() จากสัญญา
                             const [addresses, scores] = await contract.getLeaderboard();
-                            
                             if (addresses.length > 0) {
                                 for (let i = 0; i < addresses.length; i++) {
                                     const addr = addresses[i];
@@ -392,12 +334,10 @@
                                 }
                             }
                         } catch (contractError) {
-                            // ถ้าล้มเหลวจะไปใช้ข้อมูลจำลองด้านล่าง
                             console.warn("Error fetching leaderboard from contract:", contractError);
                         }
                     }
                     
-                    // ถ้าไม่มีข้อมูลจากสัญญา (addresses.length === 0) ให้ใส่ข้อมูลจำลอง
                     if (contractLeaderboard.length === 0) {
                         contractLeaderboard = [
                             { address: "0x1234...5678", fullAddress: "0x1234567890123456789012345678901234567890", score: 250 },
@@ -413,7 +353,6 @@
                         ];
                     }
                     
-                    // ถ้ามีผู้เล่นปัจจุบัน (walletAddress) และมีคะแนน (score > 0) ให้อัปเดตลงในอาร์เรย์
                     if (walletAddress && score > 0) {
                         const addressDisplay = `${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`;
                         const existingEntry = contractLeaderboard.findIndex(entry => 
@@ -421,12 +360,10 @@
                         );
                         
                         if (existingEntry >= 0) {
-                            // ถ้าพบที่อยู่ซ้ำและคะแนนสูงขึ้น ให้อัปเดต
                             if (score > contractLeaderboard[existingEntry].score) {
                                 contractLeaderboard[existingEntry].score = score;
                             }
                         } else {
-                            // ถ้าไม่เคยมี address นี้ใน leaderboard ให้เพิ่มใหม่
                             contractLeaderboard.push({ 
                                 address: addressDisplay, 
                                 fullAddress: walletAddress,
@@ -435,10 +372,7 @@
                         }
                     }
                     
-                    // เรียงลำดับคะแนนจากมากไปน้อย
                     contractLeaderboard.sort((a, b) => b.score - a.score);
-                    
-                    // เก็บลงตัวแปร leaderboard และอัปเดต UI
                     leaderboard = contractLeaderboard;
                     updateLeaderboardUI();
                     
@@ -447,16 +381,13 @@
                 }
             }
             
-            // อัปเดตหน้า leaderboard ใน UI
             function updateLeaderboardUI() {
                 leaderboardElement.innerHTML = '';
                 
-                // แสดง 10 อันดับแรก
                 leaderboard.slice(0, 10).forEach((entry, index) => {
                     const entryDiv = document.createElement('div');
                     entryDiv.className = 'leaderboard-entry';
                     
-                    // ถ้าเป็นผู้เล่นปัจจุบันให้ไฮไลท์
                     if (
                         walletAddress && 
                         (entry.fullAddress === walletAddress || 
@@ -482,52 +413,33 @@
                 });
             }
 
-            // ปุ่มรีเฟรช leaderboard
             document.getElementById('refresh-leaderboard').addEventListener('click', loadLeaderboard);
 
-            // ------------------------------
-            // ส่วนของเกม Snake
-            // ------------------------------
-
-            // ฟังก์ชันเริ่มเกม
             function startGame() {
-                // ซ่อนหน้า game over
                 gameOverDiv.style.display = 'none';
-                
-                // ตั้งต้นงู
                 snake = [
                     {x: 10, y: 10},
                     {x: 9, y: 10},
                     {x: 8, y: 10}
                 ];
-                
                 direction = 'right';
                 score = 0;
                 fruitCount = 0;
                 scoreElement.textContent = `Score: ${score}`;
-                
-                // สร้างอาหารครั้งแรก
                 createFood();
-                
-                // เริ่มการเคลื่อนไหว
                 if (!gameRunning) {
                     gameRunning = true;
                     gameLoop();
                 }
-                
-                // เพิ่มการควบคุมคีย์บอร์ด
                 document.addEventListener('keydown', handleKeyDown);
             }
             
-            // จัดการปุ่มบนคีย์บอร์ด
             function handleKeyDown(event) {
-                // ถ้ากด Space เมื่อเกมจบแล้ว ให้เริ่มเกมใหม่
                 if (event.code === 'Space' && !gameRunning) {
                     startGame();
                     return;
                 }
                 
-                // เปลี่ยนทิศทาง
                 const key = event.key;
                 if (key === 'ArrowUp' && direction !== 'down') {
                     direction = 'up';
@@ -540,14 +452,11 @@
                 }
             }
             
-            // สร้างอาหารในตำแหน่งสุ่ม
             function createFood() {
                 food = {
                     x: Math.floor(Math.random() * width),
                     y: Math.floor(Math.random() * height)
                 };
-                
-                // ตรวจสอบว่าอาหารไม่อยู่บนตัวงู
                 for (let segment of snake) {
                     if (segment.x === food.x && segment.y === food.y) {
                         createFood();
@@ -556,7 +465,6 @@
                 }
             }
             
-            // วนลูปของเกม
             function gameLoop() {
                 setTimeout(() => {
                     if (!gameRunning) return;
@@ -571,15 +479,44 @@
                 }, 100);
             }
             
-            // ล้างแคนวาส
             function clearCanvas() {
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'; 
+                // Fill with purple grass background
+                ctx.fillStyle = '#D8BFD8';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Draw grid lines
+                ctx.strokeStyle = '#9370DB'; /* Medium purple for grid */
+                ctx.lineWidth = 0.5;
+                for (let x = 0; x <= canvas.width; x += cellSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, canvas.height);
+                    ctx.stroke();
+                }
+                for (let y = 0; y <= canvas.height; y += cellSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+
+                // Draw dotted grass effect
+                ctx.fillStyle = '#BA55D3'; /* Slightly darker purple for grass dots */
+                for (let x = 0; x < width; x++) {
+                    for (let y = 0; y < height; y++) {
+                        if (Math.random() > 0.7) { // Randomly scatter dots
+                            ctx.beginPath();
+                            ctx.arc(x * cellSize + cellSize / 2, y * cellSize + cellSize / 2, 2, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                }
+
                 ctx.strokeStyle = 'black';
+                ctx.lineWidth = 2;
                 ctx.strokeRect(0, 0, canvas.width, canvas.height);
             }
             
-            // เคลื่อนที่ของงู
             function moveSnake() {
                 const head = {x: snake[0].x, y: snake[0].y};
                 
@@ -590,15 +527,13 @@
                 
                 snake.unshift(head);
                 
-                // ถ้างูกินอาหาร
                 if (head.x === food.x && head.y === food.y) {
                     score += 10;
-                    fruitCount++; 
+                    fruitCount++;
                     scoreElement.textContent = `Score: ${score}`;
                     
-                    // ถ้าเก็บผลไม้ครบ 10 ชิ้น ส่ง reward (mock)
                     if (fruitCount >= 10 && signer) {
-                        fruitCount = 0; 
+                        fruitCount = 0;
                         sendReward();
                     }
                     
@@ -608,17 +543,14 @@
                 }
             }
             
-            // ตรวจสอบการชน
             function checkCollision() {
                 const head = snake[0];
                 
-                // ชนขอบ
                 if (head.x < 0 || head.x >= width || head.y < 0 || head.y >= height) {
                     gameOver();
                     return;
                 }
                 
-                // ชนตัวเอง
                 for (let i = 1; i < snake.length; i++) {
                     if (head.x === snake[i].x && head.y === snake[i].y) {
                         gameOver();
@@ -627,11 +559,9 @@
                 }
             }
             
-            // วาดตัวงู
             function drawSnake() {
                 snake.forEach((segment, index) => {
                     if (index === 0) {
-                        // วาดหัวงูด้วยรูปภาพ
                         let rotationAngle = 0;
                         if (direction === 'up') rotationAngle = -Math.PI / 2;
                         if (direction === 'down') rotationAngle = Math.PI / 2;
@@ -643,7 +573,6 @@
                         ctx.drawImage(snakeHead, -cellSize / 2, -cellSize / 2, cellSize, cellSize);
                         ctx.restore();
                     } else {
-                        // ลำตัวงูสีม่วง
                         ctx.fillStyle = '#8A2BE2';
                         ctx.fillRect(segment.x * cellSize, segment.y * cellSize, cellSize, cellSize);
                         ctx.strokeStyle = 'black';
@@ -652,7 +581,6 @@
                 });
             }
             
-            // วาดอาหาร
             function drawFood() {
                 ctx.fillStyle = 'red';
                 ctx.beginPath();
@@ -668,30 +596,20 @@
                 ctx.stroke();
             }
             
-            // เมื่อเกมจบ
             function gameOver() {
                 gameRunning = false;
                 finalScoreSpan.textContent = score;
                 gameOverDiv.style.display = 'block';
                 
-                // ถ้ายังเชื่อม MetaMask อยู่ ให้บันทึกคะแนนลงบล็อกเชน
                 if (signer) {
                     saveScoreToBlockchain(score);
                 }
                 
-                // อัปเดต leaderboard ทันที
                 loadLeaderboard();
-                
-                // ลบ event listener การควบคุมงู
                 document.removeEventListener('keydown', handleKeyDown);
-                
-                // รอการกด Space อีกครั้งเพื่อเล่นใหม่
                 document.addEventListener('keydown', handleKeyDown);
             }
             
-            // ------------------------------
-            // Event: กดปุ่ม Connect
-            // ------------------------------
             connectButton.addEventListener('click', connectWallet);
         });
     </script>
