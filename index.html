@@ -127,7 +127,7 @@
     <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js"></script>
 </head>
 <body>
-    <img id="header-image" src="https://i.ibb.co/pBjqRHMZ/2568-03-17-10-08-39.png" alt="Snake Game Header">
+    <img id="header-image" src="https://i.ibb.co/gZJ0PTgm/111221.png" alt="111221">
     <button id="connect-button">Connect MetaMask</button>
     <div id="network-info">Network: Monad Testnet (Chain ID: 10143)</div>
     <div id="status">Connect your wallet to start playing</div>
@@ -280,20 +280,30 @@
             }
             
             async function saveScoreToBlockchain(score) {
-                try {
-                    const contract = connectToContract();
-                    if (!contract) return;
-                    
-                    statusElement.textContent = "Saving score to blockchain...";
-                    const tx = await contract.recordScore(score);
-                    await tx.wait();
-                    statusElement.textContent = `Score ${score} saved to blockchain!`;
-                    loadLeaderboard();
-                } catch (error) {
-                    console.error("Error saving score:", error);
-                    statusElement.textContent = "Error saving score: " + error.message;
-                }
-            }
+    try {
+        const contract = connectToContract();
+        if (!contract) return;
+
+        statusElement.textContent = "Saving score to blockchain...";
+        const tx = await contract.recordScore(score);
+        await tx.wait();
+        statusElement.textContent = `Score ${score} saved to blockchain!`;
+        loadLeaderboard();
+    } catch (error) {
+        console.error("Error saving score:", error);
+        // Check if the error is due to user rejection (code 4001)
+        if (error.code === 4001) {
+            // User rejected the transaction, show a neutral message or do nothing
+            statusElement.textContent = "Score saving canceled by user.";
+            setTimeout(() => {
+                statusElement.textContent = `Connected: ${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`;
+            }, 2000); // Reset status after 2 seconds
+        } else {
+            // Other errors (e.g., network issues), show a generic error message
+            statusElement.textContent = "Failed to save score. Please try again.";
+        }
+    }
+}
             
             async function sendReward() {
                 try {
